@@ -32,39 +32,63 @@ export default function Timer() {
 
   const handleStart = async () => {
     try {
-      const state = await api.startTimer(timerType, targetSeconds ?? undefined);
-      setIsRunning(state.is_running);
-      setElapsedSeconds(state.elapsed_seconds);
+      if (window.__TAURI__) {
+        const state = await api.startTimer(timerType, targetSeconds ?? undefined);
+        setIsRunning(state.is_running);
+        setElapsedSeconds(state.elapsed_seconds);
+      } else {
+        // Fallback for development without Tauri
+        setIsRunning(true);
+      }
     } catch (error) {
       console.error("Failed to start timer:", error);
+      // Fallback: start timer locally even if API fails
+      setIsRunning(true);
     }
   };
 
   const handlePause = async () => {
     try {
-      const state = await api.pauseTimer();
-      setIsRunning(state.is_running);
+      if (window.__TAURI__) {
+        const state = await api.pauseTimer();
+        setIsRunning(state.is_running);
+      } else {
+        setIsRunning(false);
+      }
     } catch (error) {
       console.error("Failed to pause timer:", error);
+      setIsRunning(false);
     }
   };
 
   const handleReset = async () => {
     try {
-      const state = await api.resetTimer();
-      setIsRunning(state.is_running);
-      setElapsedSeconds(state.elapsed_seconds);
+      if (window.__TAURI__) {
+        const state = await api.resetTimer();
+        setIsRunning(state.is_running);
+        setElapsedSeconds(state.elapsed_seconds);
+      } else {
+        setIsRunning(false);
+        setElapsedSeconds(0);
+      }
     } catch (error) {
       console.error("Failed to reset timer:", error);
+      setIsRunning(false);
+      setElapsedSeconds(0);
     }
   };
 
   const handleSaveSession = async () => {
     try {
-      await api.createSession(timerType, elapsedSeconds);
+      if (window.__TAURI__) {
+        await api.createSession(timerType, elapsedSeconds);
+      }
       handleReset();
+      alert("Session saved successfully!");
     } catch (error) {
       console.error("Failed to save session:", error);
+      alert("Failed to save session (running in dev mode without Tauri)");
+      handleReset();
     }
   };
 
@@ -92,7 +116,7 @@ export default function Timer() {
                 handleReset();
                 setTargetSeconds(type === "pomodoro" ? 25 * 60 : null);
               }}
-              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors cursor-pointer ${
                 timerType === type
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-secondary-foreground hover:bg-accent"
@@ -113,7 +137,7 @@ export default function Timer() {
                   min="0"
                   max="23"
                   placeholder="00"
-                  className="w-20 text-center text-3xl font-bold bg-secondary border border-border rounded-lg p-3"
+                  className="w-20 text-center text-3xl font-bold bg-secondary border border-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary"
                   onChange={(e) => handleCountdownChange("hours", e.target.value)}
                 />
                 <div className="text-sm text-muted-foreground mt-2">Hours</div>
@@ -125,7 +149,7 @@ export default function Timer() {
                   min="0"
                   max="59"
                   placeholder="00"
-                  className="w-20 text-center text-3xl font-bold bg-secondary border border-border rounded-lg p-3"
+                  className="w-20 text-center text-3xl font-bold bg-secondary border border-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary"
                   onChange={(e) => handleCountdownChange("minutes", e.target.value)}
                 />
                 <div className="text-sm text-muted-foreground mt-2">Minutes</div>
@@ -137,7 +161,7 @@ export default function Timer() {
                   min="0"
                   max="59"
                   placeholder="00"
-                  className="w-20 text-center text-3xl font-bold bg-secondary border border-border rounded-lg p-3"
+                  className="w-20 text-center text-3xl font-bold bg-secondary border border-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary"
                   onChange={(e) => handleCountdownChange("seconds", e.target.value)}
                 />
                 <div className="text-sm text-muted-foreground mt-2">Seconds</div>
@@ -147,7 +171,7 @@ export default function Timer() {
         )}
 
         {/* Timer Display */}
-        <div className="bg-card border border-border rounded-lg p-12 mb-8">
+        <div className="bg-card border border-border rounded-lg p-12 mb-8 hover:border-primary transition-colors">
           <div className="flex items-center justify-center mb-4">
             <Clock className="w-16 h-16 text-primary" />
           </div>
@@ -168,7 +192,7 @@ export default function Timer() {
           {!isRunning ? (
             <button
               onClick={handleStart}
-              className="flex items-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-lg font-medium hover:opacity-90 transition-opacity"
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-lg font-medium hover:opacity-90 transition-opacity cursor-pointer"
             >
               <Play className="w-5 h-5" />
               Start
@@ -176,7 +200,7 @@ export default function Timer() {
           ) : (
             <button
               onClick={handlePause}
-              className="flex items-center gap-2 bg-secondary text-secondary-foreground px-8 py-4 rounded-lg font-medium hover:bg-accent transition-colors"
+              className="flex items-center gap-2 bg-secondary text-secondary-foreground px-8 py-4 rounded-lg font-medium hover:bg-accent transition-colors cursor-pointer"
             >
               <Pause className="w-5 h-5" />
               Pause
@@ -184,7 +208,7 @@ export default function Timer() {
           )}
           <button
             onClick={handleReset}
-            className="flex items-center gap-2 bg-secondary text-secondary-foreground px-8 py-4 rounded-lg font-medium hover:bg-accent transition-colors"
+            className="flex items-center gap-2 bg-secondary text-secondary-foreground px-8 py-4 rounded-lg font-medium hover:bg-accent transition-colors cursor-pointer"
           >
             <RotateCcw className="w-5 h-5" />
             Reset
@@ -196,7 +220,7 @@ export default function Timer() {
           <div className="text-center">
             <button
               onClick={handleSaveSession}
-              className="bg-green-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+              className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-medium hover:opacity-90 transition-opacity cursor-pointer"
             >
               Save Session
             </button>

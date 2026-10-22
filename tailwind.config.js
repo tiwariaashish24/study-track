@@ -41,6 +41,10 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Custom professional colors
+        "ice-silver": "#DDE3E8",
+        "deep-aubergine": "#3A0F34",
+        "marigold": "#EAAA00",
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -1,10 +1,6 @@
-import { Home, Timer, BarChart3, BookOpen, Shield, History, Settings } from "lucide-react";
+import { Home, Timer, BarChart3, BookOpen, Shield, History as HistoryIcon, Settings as SettingsIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
-
-interface SidebarProps {
-  currentPage: string;
-  onPageChange: (page: string) => void;
-}
+import { useNavigation } from "../../store/NavigationContext";
 
 const navItems = [
   { id: "dashboard", label: "Dashboard", icon: Home },
@@ -12,11 +8,13 @@ const navItems = [
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "library", label: "Study Library", icon: BookOpen },
   { id: "rules", label: "Website Rules", icon: Shield },
-  { id: "history", label: "Session History", icon: History },
-  { id: "settings", label: "Settings", icon: Settings },
+  { id: "history", label: "Session History", icon: HistoryIcon },
+  { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
 
-export default function Sidebar({ currentPage, onPageChange }: SidebarProps) {
+export default function Sidebar() {
+  const { currentPage, navigate } = useNavigation();
+
   return (
     <aside className="w-64 bg-secondary border-r border-border flex flex-col">
       <div className="p-6 border-b border-border">
@@ -34,9 +32,9 @@ export default function Sidebar({ currentPage, onPageChange }: SidebarProps) {
           return (
             <button
               key={item.id}
-              onClick={() => onPageChange(item.id)}
+              onClick={() => navigate(item.id as any)}
               className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+                "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer",
                 isActive
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"

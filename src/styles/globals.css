@@ -4,25 +4,26 @@
 
 @layer base {
   :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    /* Custom Professional Color Scheme */
+    --background: 263 40% 12%; /* Deep Aubergine #3A0F34 as base */
+    --foreground: 205 15% 87%; /* Ice Silver #DDE3E8 as text */
+    --card: 263 45% 15%;
+    --card-foreground: 205 15% 87%;
+    --popover: 263 45% 15%;
+    --popover-foreground: 205 15% 87%;
+    --primary: 42 100% 46%; /* Marigold #EAAA00 */
+    --primary-foreground: 263 40% 12%;
+    --secondary: 205 10% 20%;
+    --secondary-foreground: 205 15% 87%;
+    --muted: 205 10% 20%;
+    --muted-foreground: 205 10% 60%;
+    --accent: 205 10% 25%;
+    --accent-foreground: 205 15% 87%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --destructive-foreground: 205 15% 87%;
+    --border: 205 10% 25%;
+    --input: 205 10% 25%;
+    --ring: 42 100% 46%;
     --radius: 0.5rem;
   }
 }

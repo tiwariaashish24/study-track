@@ -7,11 +7,12 @@ import Library from "./pages/Library";
 import Rules from "./pages/Rules";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
+import { NavigationProvider, useNavigation } from "./store/NavigationContext";
 
 type Page = "dashboard" | "timer" | "analytics" | "library" | "rules" | "history" | "settings";
 
-function App() {
-  const [currentPage, setCurrentPage] = useState<Page>("dashboard");
+function AppContent() {
+  const { currentPage } = useNavigation();
   const [dbInitialized, setDbInitialized] = useState(false);
 
   useEffect(() => {
@@ -22,9 +23,13 @@ function App() {
           const { invoke } = await import("@tauri-apps/api/core");
           await invoke("init_database");
           setDbInitialized(true);
+        } else {
+          // For development without Tauri
+          setDbInitialized(true);
         }
       } catch (error) {
         console.error("Failed to initialize database:", error);
+        setDbInitialized(true); // Continue even if DB fails
       }
     };
     initDb();
@@ -53,16 +58,24 @@ function App() {
 
   return (
     <div className="flex h-screen bg-background text-foreground">
-      <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
+      <Sidebar />
       <main className="flex-1 overflow-auto">
         {!dbInitialized && (
-          <div className="p-4 text-yellow-500">
+          <div className="p-4 text-primary">
             Initializing database...
           </div>
         )}
         {renderPage()}
       </main>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <NavigationProvider>
+      <AppContent />
+    </NavigationProvider>
   );
 }
 
