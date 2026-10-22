@@ -16,15 +16,17 @@ export default function Sidebar() {
   const { currentPage, navigate } = useNavigation();
 
   return (
-    <aside className="w-64 bg-secondary border-r border-border flex flex-col">
+    <aside className="w-64 bg-sidebar border-r border-border flex flex-col">
       <div className="p-6 border-b border-border">
-        <h1 className="text-2xl font-bold text-primary">StudyFlow</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          StudyFlow
+        </h1>
+        <p className="text-xs text-text-muted mt-1">
           Focus. Learn. Achieve.
         </p>
       </div>
 
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-3 space-y-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentPage === item.id;
@@ -34,21 +36,24 @@ export default function Sidebar() {
               key={item.id}
               onClick={() => navigate(item.id as any)}
               className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer",
+                "group w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer",
                 isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  ? "bg-elevated text-foreground border-l-2 border-border"
+                  : "text-text-secondary hover:bg-elevated hover:text-foreground"
               )}
             >
-              <Icon className="w-5 h-5" />
-              <span className="font-medium">{item.label}</span>
+              <Icon className={cn(
+                "w-5 h-5 transition-transform duration-200",
+                !isActive && "group-hover:scale-110"
+              )} />
+              <span className="text-sm font-medium">{item.label}</span>
             </button>
           );
         })}
       </nav>
 
       <div className="p-4 border-t border-border">
-        <div className="text-xs text-muted-foreground">
+        <div className="text-xs text-text-muted">
           Version 0.1.0
         </div>
       </div>

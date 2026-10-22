@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Play, Pause, RotateCcw, Clock } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Play, Pause, RotateCcw, Maximize2, Minimize2 } from "lucide-react";
 import { api } from "../lib/api";
 import { formatDuration } from "../lib/utils";
 import { TIMER_TYPES } from "../lib/constants";
@@ -11,24 +11,66 @@ export default function Timer() {
   const [isRunning, setIsRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [targetSeconds, setTargetSeconds] = useState<number | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const timerContainerRef = useRef<HTMLDivElement>(null);
 
+  // Timer logic with elapsed-time approach for accuracy
   useEffect(() => {
     let interval: NodeJS.Timeout;
+    let startTime: number;
+    let initialElapsed = elapsedSeconds;
 
     if (isRunning) {
+      startTime = Date.now();
       interval = setInterval(() => {
-        setElapsedSeconds((prev) => {
-          if (targetSeconds && prev >= targetSeconds) {
-            setIsRunning(false);
-            return prev;
-          }
-          return prev + 1;
-        });
-      }, 1000);
+        const now = Date.now();
+        const additionalElapsed = Math.floor((now - startTime) / 1000);
+        const newElapsed = initialElapsed + additionalElapsed;
+
+        if (targetSeconds && newElapsed >= targetSeconds) {
+          setIsRunning(false);
+          setElapsedSeconds(targetSeconds);
+        } else {
+          setElapsedSeconds(newElapsed);
+        }
+      }, 100);
     }
 
     return () => clearInterval(interval);
   }, [isRunning, targetSeconds]);
+
+  // Fullscreen handling
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isFullscreen) {
+        exitFullscreen();
+      }
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isFullscreen]);
+
+  const enterFullscreen = () => {
+    if (timerContainerRef.current) {
+      timerContainerRef.current.requestFullscreen();
+    }
+  };
+
+  const exitFullscreen = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    }
+  };
 
   const handleStart = async () => {
     try {
@@ -37,12 +79,10 @@ export default function Timer() {
         setIsRunning(state.is_running);
         setElapsedSeconds(state.elapsed_seconds);
       } else {
-        // Fallback for development without Tauri
         setIsRunning(true);
       }
     } catch (error) {
       console.error("Failed to start timer:", error);
-      // Fallback: start timer locally even if API fails
       setIsRunning(true);
     }
   };
@@ -101,35 +141,50 @@ export default function Timer() {
     setTargetSeconds(hours * 3600 + minutes * 60 + seconds);
   };
 
+  // Calculate progress for circular indicator
+  const progress = targetSeconds ? (elapsedSeconds / targetSeconds) * 100 : 0;
+  const circumference = 2 * Math.PI * 120; // radius = 120
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
+  const displayTime = timerType === "countdown" && targetSeconds
+    ? Math.max(0, targetSeconds - elapsedSeconds)
+    : elapsedSeconds;
+
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-8">Focus Timer</h1>
+    <div
+      ref={timerContainerRef}
+      className={`flex flex-col ${isFullscreen ? 'fixed inset-0 z-50 bg-background' : 'p-8'}`}
+    >
+      {!isFullscreen && (
+        <h1 className="text-[32px] font-semibold tracking-tight mb-8">Focus Timer</h1>
+      )}
 
-      <div className="max-w-2xl mx-auto">
-        {/* Timer Type Selector */}
-        <div className="flex gap-2 mb-8">
-          {(["stopwatch", "countdown", "pomodoro"] as TimerType[]).map((type) => (
-            <button
-              key={type}
-              onClick={() => {
-                setTimerType(type);
-                handleReset();
-                setTargetSeconds(type === "pomodoro" ? 25 * 60 : null);
-              }}
-              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors cursor-pointer ${
-                timerType === type
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-accent"
-              }`}
-            >
-              {type.charAt(0).toUpperCase() + type.slice(1)}
-            </button>
-          ))}
-        </div>
+      <div className={`flex-1 flex flex-col items-center justify-center ${isFullscreen ? 'w-full h-full' : 'max-w-2xl mx-auto'}`}>
+        {/* Timer Type Selector - Hidden in fullscreen */}
+        {!isFullscreen && (
+          <div className="flex gap-2 mb-8 w-full">
+            {(["stopwatch", "countdown", "pomodoro"] as TimerType[]).map((type) => (
+              <button
+                key={type}
+                onClick={() => {
+                  setTimerType(type);
+                  handleReset();
+                  setTargetSeconds(type === "pomodoro" ? 25 * 60 : null);
+                }}
+                className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all duration-200 cursor-pointer ${
+                  timerType === type
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-elevated"
+                }`}
+              >
+                {type.charAt(0).toUpperCase() + type.slice(1)}
+              </button>
+            ))}
+          </div>
+        )}
 
-        {/* Countdown Input */}
-        {timerType === "countdown" && !isRunning && (
-          <div className="bg-card border border-border rounded-lg p-6 mb-8">
+        {/* Countdown Input - Hidden in fullscreen */}
+        {timerType === "countdown" && !isRunning && !isFullscreen && (
+          <div className="bg-card border border-border rounded-xl p-6 mb-8 w-full">
             <div className="flex items-center justify-center gap-4">
               <div className="text-center">
                 <input
@@ -137,62 +192,90 @@ export default function Timer() {
                   min="0"
                   max="23"
                   placeholder="00"
-                  className="w-20 text-center text-3xl font-bold bg-secondary border border-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-20 text-center text-3xl font-semibold bg-elevated border border-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-border text-foreground"
                   onChange={(e) => handleCountdownChange("hours", e.target.value)}
                 />
-                <div className="text-sm text-muted-foreground mt-2">Hours</div>
+                <div className="text-xs text-text-muted mt-2">Hours</div>
               </div>
-              <span className="text-3xl font-bold">:</span>
+              <span className="text-3xl font-semibold text-text-muted">:</span>
               <div className="text-center">
                 <input
                   type="number"
                   min="0"
                   max="59"
                   placeholder="00"
-                  className="w-20 text-center text-3xl font-bold bg-secondary border border-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-20 text-center text-3xl font-semibold bg-elevated border border-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-border text-foreground"
                   onChange={(e) => handleCountdownChange("minutes", e.target.value)}
                 />
-                <div className="text-sm text-muted-foreground mt-2">Minutes</div>
+                <div className="text-xs text-text-muted mt-2">Minutes</div>
               </div>
-              <span className="text-3xl font-bold">:</span>
+              <span className="text-3xl font-semibold text-text-muted">:</span>
               <div className="text-center">
                 <input
                   type="number"
                   min="0"
                   max="59"
                   placeholder="00"
-                  className="w-20 text-center text-3xl font-bold bg-secondary border border-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-20 text-center text-3xl font-semibold bg-elevated border border-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-border text-foreground"
                   onChange={(e) => handleCountdownChange("seconds", e.target.value)}
                 />
-                <div className="text-sm text-muted-foreground mt-2">Seconds</div>
+                <div className="text-xs text-text-muted mt-2">Seconds</div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Timer Display */}
-        <div className="bg-card border border-border rounded-lg p-12 mb-8 hover:border-primary transition-colors">
-          <div className="flex items-center justify-center mb-4">
-            <Clock className="w-16 h-16 text-primary" />
-          </div>
-          <div className="text-center">
-            <div className="text-7xl font-bold mb-4">
-              {timerType === "countdown" && targetSeconds
-                ? formatDuration(Math.max(0, targetSeconds - elapsedSeconds))
-                : formatDuration(elapsedSeconds)}
+        {/* Timer Display with Circular Progress */}
+        <div className={`relative flex items-center justify-center ${isFullscreen ? 'w-full h-full' : 'mb-8'}`}>
+          {/* Circular Progress Ring */}
+          {targetSeconds && (
+            <svg
+              className={`absolute ${isFullscreen ? 'w-[400px] h-[400px]' : 'w-[320px] h-[320px]'} transition-all duration-225`}
+              viewBox="0 0 280 280"
+            >
+              {/* Track */}
+              <circle
+                cx="140"
+                cy="140"
+                r="120"
+                fill="none"
+                stroke="hsl(var(--border))"
+                strokeWidth="8"
+              />
+              {/* Progress */}
+              <circle
+                cx="140"
+                cy="140"
+                r="120"
+                fill="none"
+                stroke="hsl(var(--foreground))"
+                strokeWidth="8"
+                strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+                transform="rotate(-90 140 140)"
+                className="transition-all duration-225 ease-out"
+              />
+            </svg>
+          )}
+
+          {/* Timer Display */}
+          <div className={`text-center ${isFullscreen ? 'z-10' : ''}`}>
+            <div className={`font-semibold tabular-nums tracking-tight ${isFullscreen ? 'text-[180px]' : 'text-[120px]'} text-foreground`}>
+              {formatDuration(displayTime)}
             </div>
-            <div className="text-muted-foreground capitalize">
+            <div className="text-text-muted capitalize mt-2 text-sm">
               {timerType} {isRunning && "• Running"}
             </div>
           </div>
         </div>
 
         {/* Controls */}
-        <div className="flex gap-4 justify-center mb-8">
+        <div className="flex items-center gap-4">
           {!isRunning ? (
             <button
               onClick={handleStart}
-              className="flex items-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-lg font-medium hover:opacity-90 transition-opacity cursor-pointer"
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-xl font-medium transition-all duration-200 hover:opacity-90 active:scale-[0.98] cursor-pointer"
             >
               <Play className="w-5 h-5" />
               Start
@@ -200,7 +283,7 @@ export default function Timer() {
           ) : (
             <button
               onClick={handlePause}
-              className="flex items-center gap-2 bg-secondary text-secondary-foreground px-8 py-4 rounded-lg font-medium hover:bg-accent transition-colors cursor-pointer"
+              className="flex items-center gap-2 bg-secondary text-secondary-foreground px-8 py-4 rounded-xl font-medium transition-all duration-200 hover:bg-elevated active:scale-[0.98] cursor-pointer"
             >
               <Pause className="w-5 h-5" />
               Pause
@@ -208,19 +291,25 @@ export default function Timer() {
           )}
           <button
             onClick={handleReset}
-            className="flex items-center gap-2 bg-secondary text-secondary-foreground px-8 py-4 rounded-lg font-medium hover:bg-accent transition-colors cursor-pointer"
+            className="flex items-center gap-2 bg-secondary text-secondary-foreground px-6 py-4 rounded-xl font-medium transition-all duration-200 hover:bg-elevated active:scale-[0.98] cursor-pointer"
           >
             <RotateCcw className="w-5 h-5" />
-            Reset
+          </button>
+          <button
+            onClick={isFullscreen ? exitFullscreen : enterFullscreen}
+            className="flex items-center gap-2 bg-secondary text-secondary-foreground px-4 py-4 rounded-xl font-medium transition-all duration-200 hover:bg-elevated active:scale-[0.98] cursor-pointer"
+            title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+          >
+            {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
           </button>
         </div>
 
-        {/* Save Session */}
-        {elapsedSeconds > 0 && !isRunning && (
-          <div className="text-center">
+        {/* Save Session - Hidden in fullscreen */}
+        {elapsedSeconds > 0 && !isRunning && !isFullscreen && (
+          <div className="text-center mt-6">
             <button
               onClick={handleSaveSession}
-              className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-medium hover:opacity-90 transition-opacity cursor-pointer"
+              className="bg-primary text-primary-foreground px-8 py-3 rounded-xl font-medium transition-all duration-200 hover:opacity-90 active:scale-[0.98] cursor-pointer"
             >
               Save Session
             </button>

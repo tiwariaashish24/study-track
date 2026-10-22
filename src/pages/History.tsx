@@ -33,7 +33,6 @@ export default function History() {
         }
       } catch (error) {
         console.error("Failed to load sessions:", error);
-        // Show empty state on error
         setSessions([]);
       } finally {
         setLoading(false);
@@ -45,49 +44,49 @@ export default function History() {
   if (loading) {
     return (
       <div className="p-8">
-        <h1 className="text-3xl font-bold mb-8">Session History</h1>
-        <div className="text-muted-foreground">Loading...</div>
+        <h1 className="text-[32px] font-semibold tracking-tight mb-8">Session History</h1>
+        <div className="text-text-muted">Loading...</div>
       </div>
     );
   }
 
   return (
     <div className="p-8">
-      <h1 className="text-3xl font-bold mb-8">Session History</h1>
+      <h1 className="text-[32px] font-semibold tracking-tight mb-8">Session History</h1>
 
       {sessions.length === 0 ? (
-        <div className="flex items-center justify-center h-96 bg-card border border-border rounded-lg hover:border-primary transition-colors">
+        <div className="flex items-center justify-center h-96 bg-card border border-border rounded-xl transition-all duration-225 hover:border-border hover:bg-elevated">
           <div className="text-center">
-            <HistoryIcon className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">
+            <HistoryIcon className="w-16 h-16 text-text-muted mx-auto mb-4" />
+            <p className="text-text-muted">
               No sessions yet. Start a timer to track your study time!
             </p>
           </div>
         </div>
       ) : (
-        <div className="bg-card border border-border rounded-lg hover:border-primary transition-colors">
+        <div className="bg-card border border-border rounded-xl transition-all duration-225 hover:border-border hover:bg-elevated">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
-                <th className="text-left p-4 font-medium">Type</th>
-                <th className="text-left p-4 font-medium">Date</th>
-                <th className="text-left p-4 font-medium">Duration</th>
-                <th className="text-left p-4 font-medium">Status</th>
+                <th className="text-left p-4 text-sm font-medium text-text-secondary">Type</th>
+                <th className="text-left p-4 text-sm font-medium text-text-secondary">Date</th>
+                <th className="text-left p-4 text-sm font-medium text-text-secondary">Duration</th>
+                <th className="text-left p-4 text-sm font-medium text-text-secondary">Status</th>
               </tr>
             </thead>
             <tbody>
               {sessions.map((session) => (
-                <tr key={session.id} className="border-b border-border hover:bg-accent transition-colors">
-                  <td className="p-4 capitalize">{session.session_type}</td>
-                  <td className="p-4">
+                <tr key={session.id} className="border-b border-border hover:bg-elevated transition-colors duration-200 cursor-pointer">
+                  <td className="p-4 text-sm capitalize">{session.session_type}</td>
+                  <td className="p-4 text-sm">
                     {formatDate(new Date(session.started_at))}
                   </td>
-                  <td className="p-4">{formatDuration(session.duration_seconds)}</td>
-                  <td className="p-4">
+                  <td className="p-4 text-sm tabular-nums">{formatDuration(session.duration_seconds)}</td>
+                  <td className="p-4 text-sm">
                     {session.is_completed ? (
-                      <span className="text-green-400">Completed</span>
+                      <span className="text-text-secondary">Completed</span>
                     ) : (
-                      <span className="text-yellow-400">Incomplete</span>
+                      <span className="text-text-muted">Incomplete</span>
                     )}
                   </td>
                 </tr>
